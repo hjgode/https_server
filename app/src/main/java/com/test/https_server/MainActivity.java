@@ -35,6 +35,64 @@ public class MainActivity extends AppCompatActivity {
     private MyHTTPD server;
     private Handler handler = new Handler();
 
+    final String myHTML ="<html>\n" +
+            "  <head>\n" +
+            "    <META HTTP-EQUIV=\"CACHE-CONTROL\" CONTENT=\"NO-CACHE\">\n" +
+            "\t  <META HTTP-EQUIV=\"PRAGMA\" CONTENT=\"NO-CACHE\">\n" +
+            "\t  <META HTTP-EQUIV=\"EXPIRES\" CONTENT=\"0\">\n" +
+            "  \n" +
+            "    <meta name=\"viewport\" content=\"width=240, initial-scale=1, maximum-scale=2, minimum-scale=1\">\n" +
+            "    <title>WebUSB Demo</title>\n" +
+            "    <script>\n" +
+            "      function addlog(txt){\n" +
+            "        document.getElementById('logtxt').innerHTML+=txt;\n" +
+            "      }\n" +
+            "      document.addEventListener('DOMContentLoaded', event => {\n" +
+            "        let button = document.getElementById('connect')\n" +
+            "      \n" +
+            "        button.addEventListener('click', async() => {\n" +
+            "          let device\n" +
+            "          const VENDOR_ID = 0x0C2E\n" +
+            "          // for PC43K USB scanner: 0x0e47 and 0x0e41\n" +
+            "          // for 1450g in CDC/ACM COM mode (VID:PID): 0x0C2E:0x0CAA \n" +
+            "          \n" +
+            "          try {\n" +
+            "            device = await navigator.usb.requestDevice({\n" +
+            "              filters: [{\n" +
+            "                vendorId: VENDOR_ID\n" +
+            "              }]\n" +
+            "            })\n" +
+            "      \n" +
+            "            console.log('open')\n" +
+            "            await device.open()\n" +
+            "            console.log('opened:', device)\n" +
+            "          } catch (error) {\n" +
+            "            console.log(error)\n" +
+            "            addlog(error);\n" +
+            "          }\n" +
+            "          if(device!=undefined){\n" +
+            "            navigator.usb.addEventListener('connect', event => {\n" +
+            "              // Add |event.device| to the UI.\n" +
+            "              console.log('connected');\n" +
+            "            });\n" +
+            "            \n" +
+            "            navigator.usb.addEventListener('disconnect', event => {\n" +
+            "              // Remove |event.device| from the UI.\n" +
+            "              console.log('disconnected');\n" +
+            "            });\n" +
+            "          }\n" +
+            "          if(device!=undefined){\n" +
+            "      \t    await device.close();\n" +
+            "          }\n" +
+            "        })\n" +
+            "      })\n" +
+            "    </script>\n" +
+            "  </head>\n" +
+            "  <body>\n" +
+            "    <button id=\"connect\">Connect</button>\n" +
+            "    <div id='logtxt'>logging</div>\n" +
+            "  </body>\n" +
+            "</html>\n";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -117,10 +175,11 @@ public class MainActivity extends AppCompatActivity {
                 InputStream keyStoreStream = context.getAssets().open("keystore.bks");
                 keyStore.load(keyStoreStream, "password".toCharArray());
                 KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                keyManagerFactory.init(keyStore, "myCertificatePass".toCharArray());
+                keyManagerFactory.init(keyStore, "password".toCharArray());
                 makeSecure(NanoHTTPD.makeSSLSocketFactory(keyStore, keyManagerFactory), null);
+                Log.d(TAG,"keystore OK");
             }catch(Exception ex){
-                Log.d(TAG,"keystore opperations: "+ex.getMessage());
+                Log.d(TAG,"EXCEPTION: keystore opperations: "+ex.getMessage());
             }
             //makeSecure(NanoHTTPD.makeSSLSocketFactory("/keystore.jks", "password".toCharArray()), null);
 
@@ -136,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
         }
         @Override
         public Response serve(String uri, Method method, Map<String,String> headers, Map<String, String> parms, Map<String, String> files) {
-            Log.d(TAG, "respose...");
+            Log.d(TAG, "response...");
             final StringBuilder buf = new StringBuilder();
             for (Map.Entry<String, String> kv : headers.entrySet())
                 buf.append(kv.getKey() + " : " + kv.getValue() + "\n");
@@ -149,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
 
             final String html = "<html><head><head><body><h1>Hello, World</h1></body></html>";
             Log.d(TAG, "send response...");
-            return newFixedLengthResponse(html);
+            return newFixedLengthResponse(myHTML);// html);
 //            return new NanoHTTPD.Response(NanoHTTPD.Response.Status.OK, NanoHTTPD.MIME_HTML, html);
         }
     }
